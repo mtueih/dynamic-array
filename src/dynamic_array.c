@@ -14,7 +14,7 @@
 )
 
 // 至尾元素移动 start, end, quantity
-#define ELE_MOVE(end, start) memmove( \
+#define TO_END_ELE_MOVE(end, start) memmove( \
     (char *)p_darr->m_data + (end) * p_darr->m_element_size, \
     (char *)p_darr->m_data + (start) * p_darr->m_element_size, \
     (p_darr->m_length - (start)) * p_darr->m_element_size \
@@ -26,23 +26,12 @@
 #define P_ELE_AT(index) ((char *)p_darr->m_data + (index) * p_darr->m_element_size)
 #define P_ELE_AT_START ((char *)p_darr->m_data)
 #define P_ELE_AT_END ((char *)p_darr->m_data + p_darr->m_length * p_darr->m_element_size)
-
-// index 处元素指针，不限定 darr 指针
-#define P_ELE_AT_ANY(p, index) ((char *)(p) + (index) * p_darr->m_element_size)
-// index 处元素，不限定 darr 指针
-#define ELE_AT_ANY(p, index) (*(P_ELE_AT_ANY(p, index)))
-// 指针对应 index
-#define INDEX_ELE_AT(p) (((p) - p_darr->m_data) / p_darr->m_element_size)
-// 元素指针自增自建
+// 元素指针自增自减
 #define P_ELE_INC(p) ((p) += p_darr->m_element_size)
 #define P_ELE_DEC(p) ((p) -= p_darr->m_element_size)
-#define P_ELE_ADD(p_ele, n) ((p_ele) += ((n) * p_darr->m_element_size))
-#define P_ELE_SUB(p_ele, n) ((p_ele) -= ((n) * p_darr->m_element_size))
 // 去两数较大、较小值
 #define MIN(a, b) ((a) < (b) ? (a) : (b))
-#define MAX(a, b) ((a) > (b) ? (a) : (b)
-#define MIN_CMP(a, b) (cmp((a), (b)) < 0 ? (a) : (b))
-#define ELE_CPY_TMP(p_dest, p_src) memcpy((p_dest), (p_src), p_darr->m_element_size)
+#define ELE_CPY(p_dest, p_src) memcpy((p_dest), (p_src), p_darr->m_element_size)
 
 
 struct dynamic_array {
@@ -177,7 +166,7 @@ int darr_insert(darr_t *p_darr, const size_t index, const void *p_element) {
     // 扩容
     if (!CAP_RES(p_darr->m_length + 1)) return ENOMEM;
     // 移动
-    if (index < p_darr->m_length - 1) { ELE_MOVE(index + 1, index); }
+    if (index < p_darr->m_length - 1) { TO_END_ELE_MOVE(index + 1, index); }
     // 拷贝
     NEW_ELE_CPY(index);
     ++p_darr->m_length;
@@ -189,7 +178,7 @@ void darr_remove(darr_t *p_darr, const size_t index) {
     assert(p_darr != NULL && index < p_darr->m_length);
 
     // 移动
-    if (index < p_darr->m_length - 1) { ELE_MOVE(index, index + 1); }
+    if (index < p_darr->m_length - 1) { TO_END_ELE_MOVE(index, index + 1); }
     // 减容
     CAP_RES(--p_darr->m_length);
 }
@@ -337,9 +326,9 @@ selection_sort: {
                  k += p_darr->m_element_size
             ) { if (desc ? cmp(k, l) > 0 : cmp(k, l) < 0) { l = k; } }
             if (l != j) {
-                ELE_CPY_TMP(temp, j);
-                ELE_CPY_TMP(k, l);
-                ELE_CPY_TMP(l, temp);
+                ELE_CPY(temp, j);
+                ELE_CPY(k, l);
+                ELE_CPY(l, temp);
             }
         }
         free(temp);
