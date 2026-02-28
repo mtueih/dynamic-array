@@ -2,8 +2,7 @@ cmake_minimum_required(VERSION 4.1)
 project(dynamic_array C)
 
 set(CMAKE_C_STANDARD 17)
-
-set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 
 add_library(darr STATIC src/dynamic_array.c)
 target_include_directories(darr PUBLIC include)
