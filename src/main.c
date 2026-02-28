@@ -32,6 +32,7 @@ int main(void) {
 
     darr_foreach(arr, print_int);
     fputc('\n', stdout);
+    printf("数组占用容量（字节）：%zu\n", darr_capacity(arr));
 
     darr_sort(arr, cmp_int, false);
 
