@@ -1,107 +1,104 @@
 #ifndef DYNAMIC_ARRAY_H
 #define DYNAMIC_ARRAY_H
 
-#include <stdbool.h>
 #include <stddef.h>
+#include <errno.h>
+#include <stdbool.h>
 
-#if defined(__GNUC__) || defined(__clang__)
-    #define DARR_NODISCARD __attribute__((warn_unused_result))
-#elif defined(_MSC_VER)
-    #define DARR_NODISCARD _Check_return_
-#else
-    #define DARR_NODISCARD
-#endif
+// 「动态字符串」抽象数据类型声明
+typedef struct DynamicArray DArray;
 
+// 返回值类型为 int 的函数的返回错误码
+enum
+{
+	DARR_SUCCESS = 0,
+	DARR_ARG_INVAL = -EINVAL,
+	DARR_MEM_LOC_FAILD = -ENOMEM
+};
 
-// ADT 类型：「动态数组」
-typedef struct dynamic_array darr_t;
-
-// 比较函数指针类型
-typedef int (*darr_cmp_fn)(const void *, const void *);
-
-// 创建，销毁，清空
+// 「动态字符串」抽象数据类型 API 声明
 /**
- * 创建一个「动态数组」
- * @param element_size 元素大小（字节）
- * @param length 初始长度（元素个数）
- * @return darr 指针，为 NULL 表示创建失败。
+ * 创建一个动态数组。
+ * @param element_size 所创建动态数组的元素的大小，不能为 0。
+ * @param element_destroy_function 一个函数指针，当数组的元素是指向堆内存的指针时，传入一个用来释放它的内存的函数，
+ * 当元素被从动态数组中删除时，会调用该函数来释放其内存。当元素不是指向堆内存的指针，或需要手动管理时，传入一个空指针。
+ * @param length 数组的初始元素个数。函数不会自动初始化每个元素。
+ * @return 动态数组指针。如果为空则表示创建失败。
  */
-DARR_NODISCARD
-darr_t *darr_create(size_t element_size, size_t length);
+DArray *darr_create(size_t elem_size, size_t length);
 
 /**
- *
- * @param p_darr 「动态数组」指针。
+ * 销毁一个动态数组。
+ * @param darr 要销毁的动态数组的指针。
  */
-void darr_destroy(darr_t *p_darr);
+void darr_destroy(DArray *darr);
 
-void darr_clear(darr_t *p_darr);
+/**
+ * 清空一个动态数组。
+ * @param darr 要清空的动态数组的指针。
+ */
+void darr_clear(DArray *darr);
+
+DArray *darr_create_from_carr(size_t elem_size, size_t length, const void *carr, size_t count);
+DArray *darr_clone(const DArray *darr);
+
+int darr_assign_carr(DArray *darr, const void *carr, size_t count);
+int darr_assign(DArray *dst, const DArray *src);
 
 // 获取属性，元素
-size_t darr_element_size(const darr_t *p_darr);
+size_t darr_element_size(const DArray *darr);
 
-size_t darr_length(const darr_t *p_darr);
+size_t darr_length(const DArray *darr);
 
-size_t darr_capacity(const darr_t *p_darr);
+size_t darr_capacity(const DArray *darr);
 
-bool darr_empty(const darr_t *p_darr);
+bool darr_is_empty(const DArray *darr);
 
-void *darr_carr(const darr_t *p_darr);
-const void *darr_carr_const(const darr_t *p_darr);
+void *darr_carr(DArray *darr);
+const void *darr_carr_const(const DArray *darr);
 
-void *darr_at(const darr_t *p_darr, size_t index);
+void *darr_at(DArray *darr, size_t pos);
+const void *darr_at_const(const DArray *darr, size_t pos);
 
 // 增减元素
-int darr_push(darr_t *p_darr, const void *p_element);
-
-void darr_pop(darr_t *p_darr);
-
-int darr_insert(darr_t *p_darr, size_t index, const void *p_element);
-
-void darr_remove(darr_t *p_darr, size_t index);
-
-int darr_insert_n_carr(darr_t *p_darr,
-    size_t index, const void *p_carr, size_t carr_length);
-
-int darr_insert_n(darr_t *p_dst_darr, size_t index,
-    const darr_t *p_src_darr);
+int darr_append(DArray *darr, const void *elem);
+int darr_append_n(DArray *darr, const void *elem, size_t count);
+int darr_prepend(DArray *darr, const void *elem);
+int darr_prepend_n(DArray *darr, const void *elem, size_t count);
+int darr_insert(DArray *darr, size_t pos, const void *elem);
+int darr_insert_n(DArray *darr, size_t pos, const void *elem, size_t count);
+void darr_remove(DArray *darr, size_t pos);
+void darr_remove_n(DArray *darr, size_t pos, size_t count);
 
 // 容量管理
-int darr_resize(darr_t *p_darr, size_t new_length);
-void darr_shrink_to_fit(darr_t *p_darr);
+int darr_reserve(DArray *darr, size_t new_length);
+void darr_shrink_to_fit(DArray *darr);
 
 // 遍历
-void darr_foreach(const darr_t *p_darr, void (*func)(void *));
-void darr_foreach_const(const darr_t *p_darr, void (*func)(const void *));
+void darr_foreach(DArray *darr, void (*func)(void *));
+void darr_foreach_const(const DArray *darr, void (*func)(const void *));
 
 // 查询
 bool darr_contains(
-    const darr_t *p_darr,
-    const void *p_element,
-    darr_cmp_fn cmp_fn
-);
+	const DArray *darr,
+	const void *element,
+	int (*cmp)(const void *, const void *));
 
 void *darr_find(
-    const darr_t *p_darr,
-    const void *p_element,
-    darr_cmp_fn cmp_fn
-);
-
-void *darr_rfind(
-    const darr_t *p_darr,
-    const void *p_element,
-    darr_cmp_fn cmp_fn
-);
+	DArray *darr,
+	const void *element,
+	int (*cmp)(const void *, const void *),
+	bool backward);
+const void *darr_find_const(
+		const DArray *darr,
+		const void *element,
+		int (*cmp)(const void *, const void *),
+		bool backward);
 
 // 排序
-void darr_sort(darr_t *p_darr, darr_cmp_fn cmp_fn, bool desc);
+void darr_sort(DArray *darr, int (*cmp)(const void *, const void *), bool desc);
 
 // ADT 操作
-void darr_swap(darr_t *p_darr_1, darr_t *p_darr_2);
-
-DARR_NODISCARD
-darr_t *darr_clone(const darr_t *p_darr);
-
-int darr_copy(darr_t *p_dst_darr, const darr_t *p_src_darr);
+void darr_swap(DArray *darr_1, DArray *darr_2);
 
 #endif // DYNAMIC_ARRAY_H

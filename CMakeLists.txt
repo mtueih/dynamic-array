@@ -1,12 +1,18 @@
 cmake_minimum_required(VERSION 4.1)
-project(dynamic_array C)
+project(DynamicArray C)
 
-set(CMAKE_C_STANDARD 17)
+set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 
-add_library(darr STATIC src/dynamic_array.c)
+add_library(darr STATIC
+	include/dynamic_array.h
+	src/dynamic_array.c
+)
 target_include_directories(darr PUBLIC include)
 
-add_executable(dynamic_array src/main.c)
-target_include_directories(dynamic_array PUBLIC include)
-target_link_libraries(dynamic_array PRIVATE darr)
+add_executable(${PROJECT_NAME}
+	src/main.c
+)
+target_include_directories(${PROJECT_NAME} PUBLIC include)
+target_link_libraries(${PROJECT_NAME} PRIVATE darr)
+
